@@ -71,11 +71,6 @@ echo "floor()"
 exit 1
 ])
 
-# On illumos we need -lsocket
-AC_SEARCH_LIBS(socket, [socket], [], [
-echo "socket()"
-exit 1
-])
 
 # On illumos inet_ntop in in -lnsl
 AC_SEARCH_LIBS(inet_ntop, [nsl], [], [
@@ -88,19 +83,6 @@ AC_C_CONST
 
 # Check for poll.h (it's in POSIX so everyone should have it?)
 AC_CHECK_HEADERS([poll.h])
-
-# Check for SCTP support
-AC_CHECK_HEADERS([sys/socket.h])
-AC_CHECK_HEADERS([netinet/sctp.h],
-		 AC_DEFINE([HAVE_SCTP], [1], [Have SCTP support.])
-		 AC_SEARCH_LIBS(sctp_bindx, [sctp])
-		 AC_CHECK_TYPES([struct sctp_assoc_value], [], [],
-				[[#include <netinet/sctp.h>]]),
-		 [],
-		 [#ifdef HAVE_SYS_SOCKET_H
-#include <sys/socket.h>
-#endif
-])
 
 AC_CHECK_HEADER([endian.h],
 		AC_DEFINE([HAVE_ENDIAN_H], [1], [Define to 1 if you have the <endian.h> header file.]),
@@ -123,19 +105,6 @@ else
     LDFLAGS="$LDFLAGS $OPENSSL_LDFLAGS"
     LIBS="$OPENSSL_LIBS $LIBS"
     CPPFLAGS="$OPENSSL_INCLUDES $CPPFLAGS"
-fi
-
-# Check for TCP_CONGESTION sockopt (believed to be Linux and FreeBSD only)
-AC_CACHE_CHECK([TCP_CONGESTION socket option],
-[iperf3_cv_header_tcp_congestion],
-AC_EGREP_CPP(yes,
-[#include <netinet/tcp.h>
-#ifdef TCP_CONGESTION
-  yes
-#endif
-],iperf3_cv_header_tcp_congestion=yes,iperf3_cv_header_tcp_congestion=no))
-if test "x$iperf3_cv_header_tcp_congestion" = "xyes"; then
-    AC_DEFINE([HAVE_TCP_CONGESTION], [1], [Have TCP_CONGESTION sockopt.])
 fi
 
 # Check for IPv6 flowlabel support (believed to be Linux only)
@@ -175,19 +144,6 @@ AC_CHECK_FUNCS([sendfile])
 # Check for getline support, used as a part of authenticated
 # connections.
 AC_CHECK_FUNCS([getline])
-
-# Check for packet pacing socket option (Linux only for now).
-AC_CACHE_CHECK([SO_MAX_PACING_RATE socket option],
-[iperf3_cv_header_so_max_pacing_rate],
-AC_EGREP_CPP(yes,
-[#include <sys/socket.h>
-#ifdef SO_MAX_PACING_RATE
-  yes
-#endif
-],iperf3_cv_header_so_max_pacing_rate=yes,iperf3_cv_header_so_max_pacing_rate=no))
-if test "x$iperf3_cv_header_so_max_pacing_rate" = "xyes"; then
-    AC_DEFINE([HAVE_SO_MAX_PACING_RATE], [1], [Have SO_MAX_PACING_RATE sockopt.])
-fi
 
 # Check if we need -lrt for clock_gettime
 AC_SEARCH_LIBS(clock_gettime, [rt posix4])
