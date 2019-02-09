@@ -29,12 +29,11 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <errno.h>
-#include <sys/socket.h>
 #include <sys/types.h>
-#include <netinet/in.h>
-#include <netinet/tcp.h>
 #include <assert.h>
-#include <netdb.h>
+
+#include "ip_headers.h"
+
 #include <string.h>
 #include <fcntl.h>
 #include <limits.h>
@@ -57,7 +56,7 @@
 #endif /* HAVE_SENDFILE */
 
 #ifdef HAVE_POLL_H
-#include <poll.h>
+// #include <poll.h>
 #endif /* HAVE_POLL_H */
 
 #include "iperf_util.h"
@@ -84,10 +83,10 @@ timeout_connect(int s, const struct sockaddr *name, socklen_t namelen,
 			return -1;
 	}
 
-	if ((ret = connect(s, name, namelen)) != 0 && errno == EINPROGRESS) {
+	if ((ret = lwip_connect(s, name, namelen)) != 0 && errno == EINPROGRESS) {
 		pfd.fd = s;
 		pfd.events = POLLOUT;
-		if ((ret = poll(&pfd, 1, timeout)) == 1) {
+		if ((ret = lwip_poll(&pfd, 1, timeout)) == 1) {
 			optlen = sizeof(optval);
 			if ((ret = getsockopt(s, SOL_SOCKET, SO_ERROR,
 			    &optval, &optlen)) == 0) {

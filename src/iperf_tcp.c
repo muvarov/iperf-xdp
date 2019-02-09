@@ -29,13 +29,11 @@
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
-#include <sys/socket.h>
 #include <sys/types.h>
-#include <netinet/in.h>
-#include <netdb.h>
 #include <sys/time.h>
-#include <sys/select.h>
 #include <limits.h>
+
+#include "ip_headers.h"
 
 #include "iperf.h"
 #include "iperf_api.h"
@@ -116,7 +114,7 @@ iperf_tcp_accept(struct iperf_test * test)
     struct sockaddr_storage addr;
 
     len = sizeof(addr);
-    if ((s = accept(test->listener, (struct sockaddr *) &addr, &len)) < 0) {
+    if ((s = lwip_accept(test->listener, (struct sockaddr *) &addr, &len)) < 0) {
         i_errno = IESTREAMCONNECT;
         return -1;
     }
@@ -197,7 +195,7 @@ iperf_tcp_listen(struct iperf_test *test)
 
         if (test->no_delay) {
             opt = 1;
-            if (setsockopt(s, IPPROTO_TCP, TCP_NODELAY, &opt, sizeof(opt)) < 0) {
+            if (lwip_setsockopt(s, IPPROTO_TCP, TCP_NODELAY, &opt, sizeof(opt)) < 0) {
 		saved_errno = errno;
 		close(s);
 		freeaddrinfo(res);
@@ -613,7 +611,7 @@ iperf_tcp_connect(struct iperf_test *test)
 	}
     }
 
-    if (connect(s, (struct sockaddr *) server_res->ai_addr, server_res->ai_addrlen) < 0 && errno != EINPROGRESS) {
+    if (lwip_connect(s, (struct sockaddr *) server_res->ai_addr, server_res->ai_addrlen) < 0 && errno != EINPROGRESS) {
 	saved_errno = errno;
 	close(s);
 	freeaddrinfo(server_res);

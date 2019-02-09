@@ -35,11 +35,10 @@
 #include <unistd.h>
 #include <assert.h>
 #include <fcntl.h>
-#include <sys/socket.h>
 #include <sys/types.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <netdb.h>
+
+#include "ip_headers.h"
+
 #ifdef HAVE_STDINT_H
 #include <stdint.h>
 #endif
@@ -111,7 +110,7 @@ iperf_accept(struct iperf_test *test)
     struct sockaddr_storage addr;
 
     len = sizeof(addr);
-    if ((s = accept(test->listener, (struct sockaddr *) &addr, &len)) < 0) {
+    if ((s = lwip_accept(test->listener, (struct sockaddr *) &addr, &len)) < 0) {
         i_errno = IEACCEPT;
         return -1;
     }
@@ -482,7 +481,7 @@ iperf_run_server(struct iperf_test *test)
 #if defined(HAVE_TCP_CONGESTION)
 		    if (test->protocol->id == Ptcp) {
 			if (test->congestion) {
-			    if (setsockopt(s, IPPROTO_TCP, TCP_CONGESTION, test->congestion, strlen(test->congestion)) < 0) {
+			    if (lwip_setsockopt(s, IPPROTO_TCP, TCP_CONGESTION, test->congestion, strlen(test->congestion)) < 0) {
 				/*
 				 * ENOENT means we tried to set the
 				 * congestion algorithm but the algorithm

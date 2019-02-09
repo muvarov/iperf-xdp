@@ -36,11 +36,9 @@
 #ifdef HAVE_STDINT_H
 #include <stdint.h>
 #endif
-#include <sys/socket.h>
 #include <sys/types.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <netdb.h>
+
+#include "ip_headers.h"
 
 #include "iperf.h"
 #include "iperf_api.h"
@@ -48,6 +46,7 @@
 #include "iperf_locale.h"
 #include "net.h"
 
+extern void max_lwip_init(void);
 
 static int run(struct iperf_test *test);
 
@@ -91,6 +90,8 @@ main(int argc, char **argv)
     if (sched_setaffinity(0, sizeof(cpu_set_t), &cpu_set) != 0)
         err("couldn't change CPU affinity");
 #endif
+
+    max_lwip_init();
 
     test = iperf_new_test();
     if (!test)

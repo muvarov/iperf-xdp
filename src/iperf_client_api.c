@@ -32,10 +32,8 @@
 #include <unistd.h>
 #include <signal.h>
 #include <sys/types.h>
-#include <netinet/in.h>
-#include <sys/select.h>
-#include <sys/uio.h>
-#include <arpa/inet.h>
+
+#include "ip_headers.h"
 
 #include "iperf.h"
 #include "iperf_api.h"

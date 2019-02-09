@@ -30,14 +30,13 @@
 #include <errno.h>
 #include <unistd.h>
 #include <assert.h>
-#include <sys/socket.h>
 #include <sys/types.h>
-#include <netinet/in.h>
 #ifdef HAVE_STDINT_H
 #include <stdint.h>
 #endif
 #include <sys/time.h>
-#include <sys/select.h>
+
+#include "ip_headers.h"
 
 #include "iperf.h"
 #include "iperf_api.h"

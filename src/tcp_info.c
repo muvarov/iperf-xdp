@@ -47,10 +47,10 @@
 #include <stdlib.h>
 #include <sys/param.h>
 #include <sys/types.h>
-#include <sys/socket.h>
 #include <string.h>
-#include <netinet/in.h>
 #include <errno.h>
+
+#include "ip_headers.h"
 
 #include "iperf.h"
 #include "iperf_api.h"
@@ -197,6 +197,7 @@ get_pmtu(struct iperf_interval_results *irp)
 void
 build_tcpinfo_message(struct iperf_interval_results *r, char *message)
 {
+#if 0
 #if defined(linux)
     sprintf(message, report_tcpInfo, r->tcpInfo.tcpi_snd_cwnd, r->tcpInfo.tcpi_snd_ssthresh,
 	    r->tcpInfo.tcpi_rcv_ssthresh, r->tcpInfo.tcpi_unacked, r->tcpInfo.tcpi_sacked,
@@ -210,5 +211,6 @@ build_tcpinfo_message(struct iperf_interval_results *r, char *message)
 #if defined(__NetBSD__) && defined(TCP_INFO)
     sprintf(message, report_tcpInfo, r->tcpInfo.tcpi_snd_cwnd,
 	    r->tcpInfo.tcpi_rcv_space, r->tcpInfo.tcpi_snd_ssthresh, r->tcpInfo.tcpi_rtt);
+#endif
 #endif
 }

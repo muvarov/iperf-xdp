@@ -25,8 +25,9 @@
  * file for complete information.
  */
 #include <stdio.h>
-#include <errno.h>
-#include <netdb.h>
+
+#include "ip_headers.h"
+
 #include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>

@@ -24,12 +24,16 @@
  * This code is distributed under a BSD style license, see the LICENSE file
  * for complete information.
  */
+
+
 #ifndef _GNU_SOURCE
 # define _GNU_SOURCE
 #endif
 #define __USE_GNU
 
+
 #include "iperf_config.h"
+
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -40,16 +44,10 @@
 #include <signal.h>
 #include <unistd.h>
 #include <assert.h>
-#include <fcntl.h>
-#include <sys/socket.h>
 #include <sys/types.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <netdb.h>
 #ifdef HAVE_STDINT_H
 #include <stdint.h>
 #endif
-#include <netinet/tcp.h>
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <sys/mman.h>
@@ -57,6 +55,9 @@
 #include <sched.h>
 #include <setjmp.h>
 #include <stdarg.h>
+#include <errno.h>
+
+#include "ip_headers.h"
 
 #if defined(HAVE_CPUSET_SETAFFINITY)
 #include <sys/param.h>
@@ -86,6 +87,8 @@
 #include <openssl/bio.h>
 #include "iperf_auth.h"
 #endif /* HAVE_SSL */
+
+#include <errno.h>
 
 /* Forwards. */
 static int send_parameters(struct iperf_test *test);
@@ -1563,7 +1566,7 @@ iperf_exchange_parameters(struct iperf_test *test)
                 i_errno = IECTRLWRITE;
                 return -1;
             }
-            err = htonl(errno);
+            err = htonl(1/*errno*/);
             if (Nwrite(test->ctrl_sck, (char*) &err, sizeof(err), Ptcp) < 0) {
                 i_errno = IECTRLWRITE;
                 return -1;

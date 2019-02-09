@@ -27,19 +27,17 @@
 #ifndef __IPERF_H
 #define __IPERF_H
 
-#include "iperf_config.h"
+#include "ip_headers.h"
 
 #include <sys/time.h>
 #include <sys/types.h>
 #ifdef HAVE_STDINT_H
 #include <stdint.h>
 #endif
-#include <sys/select.h>
-#include <sys/socket.h>
 #ifndef _GNU_SOURCE
 # define _GNU_SOURCE
 #endif
-#include <netinet/tcp.h>
+
 
 #if defined(HAVE_CPUSET_SETAFFINITY)
 #include <sys/param.h>
