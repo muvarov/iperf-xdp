@@ -48,7 +48,7 @@ libiperf_la_SOURCES     = \
 
 # Specify the sources and various flags for the iperf binary
 iperf3_SOURCES          = main.c
-iperf3_CFLAGS           = -g
+iperf3_CFLAGS           = -g -O0
 iperf3_LDADD            = libiperf.la
 iperf3_LDFLAGS          = -g
 
@@ -59,7 +59,7 @@ if ENABLE_PROFILING
 iperf3_profile_SOURCES  = main.c \
                           $(libiperf_la_SOURCES)
 
-iperf3_profile_CFLAGS   = -pg -g
+iperf3_profile_CFLAGS   = -pg -g -O0
 iperf3_profile_LDADD    = libiperf.la
 iperf3_profile_LDFLAGS  = -pg -g
 endif

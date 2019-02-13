@@ -141,18 +141,18 @@ run(struct iperf_test *test)
 		rc = daemon(0, 0);
 		if (rc < 0) {
 		    i_errno = IEDAEMON;
-		    iperf_errexit(test, "error - %s", iperf_strerror(i_errno));
+		    iperf_errexit(test, "error 1 - %s", iperf_strerror(i_errno));
 		}
 	    }
 	    if (iperf_create_pidfile(test) < 0) {
 		i_errno = IEPIDFILE;
-		iperf_errexit(test, "error - %s", iperf_strerror(i_errno));
+		iperf_errexit(test, "error 2 - %s", iperf_strerror(i_errno));
 	    }
             for (;;) {
 		int rc;
 		rc = iperf_run_server(test);
 		if (rc < 0) {
-		    iperf_err(test, "error - %s", iperf_strerror(i_errno));
+		    iperf_err(test, "error 3 - %s", iperf_strerror(i_errno));
 		    if (rc < -1) {
 		        iperf_errexit(test, "exiting");
 		    }
@@ -165,7 +165,7 @@ run(struct iperf_test *test)
             break;
 	case 'c':
 	    if (iperf_run_client(test) < 0)
-		iperf_errexit(test, "error - %s", iperf_strerror(i_errno));
+		iperf_errexit(test, "error 4 - %s", iperf_strerror(i_errno));
             break;
         default:
             usage();

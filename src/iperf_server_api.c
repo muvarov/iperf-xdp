@@ -68,6 +68,8 @@
 int
 iperf_server_listen(struct iperf_test *test)
 {
+
+    printf("%s() %d\n", __func__, __LINE__);
     retry:
     if((test->listener = netannounce(test->settings->domain, Ptcp, test->bind_address, test->server_port)) < 0) {
 	if (errno == EAFNOSUPPORT && (test->settings->domain == AF_INET6 || test->settings->domain == AF_UNSPEC)) {
@@ -81,6 +83,7 @@ iperf_server_listen(struct iperf_test *test)
 	    goto retry;
 	} else {
 	    i_errno = IELISTEN;
+    	    printf("%s() %d\n", __func__, __LINE__);
 	    return -1;
 	}
     }
@@ -397,6 +400,7 @@ iperf_run_server(struct iperf_test *test)
     struct timeval* timeout;
     int flag;
 
+	printf("%s() %d\n", __func__, __LINE__);
     if (test->affinity != -1) 
 	if (iperf_setaffinity(test, test->affinity) != 0)
 	    return -2;
@@ -415,10 +419,12 @@ iperf_run_server(struct iperf_test *test)
 	iflush(test);
     }
 
+	printf("%s() %d\n", __func__, __LINE__);
     // Open socket and listen
     if (iperf_server_listen(test) < 0) {
         return -2;
     }
+	printf("%s() %d\n", __func__, __LINE__);
 
     // Begin calculating CPU utilization
     cpu_util(NULL);
@@ -434,10 +440,11 @@ iperf_run_server(struct iperf_test *test)
 
 	iperf_time_now(&now);
 	timeout = tmr_timeout(&now);
-        result = select(test->max_fd + 1, &read_set, &write_set, NULL, timeout);
+        result = lwip_select(test->max_fd + 1, &read_set, &write_set, NULL, timeout);
         if (result < 0 && errno != EINTR) {
 	    cleanup_server(test);
             i_errno = IESELECT;
+	    printf("%s() %d\n", __func__, __LINE__);
             return -1;
         }
 	if (result > 0) {
@@ -445,6 +452,7 @@ iperf_run_server(struct iperf_test *test)
                 if (test->state != CREATE_STREAMS) {
                     if (iperf_accept(test) < 0) {
 			cleanup_server(test);
+	    		printf("%s() %d\n", __func__, __LINE__);
                         return -1;
                     }
                     FD_CLR(test->listener, &read_set);
@@ -465,6 +473,7 @@ iperf_run_server(struct iperf_test *test)
             if (FD_ISSET(test->ctrl_sck, &read_set)) {
                 if (iperf_handle_message_server(test) < 0) {
 		    cleanup_server(test);
+	    	    printf("%s() %d\n", __func__, __LINE__);
                     return -1;
 		}
                 FD_CLR(test->ctrl_sck, &read_set);                
@@ -475,6 +484,7 @@ iperf_run_server(struct iperf_test *test)
     
                     if ((s = test->protocol->accept(test)) < 0) {
 			cleanup_server(test);
+	    		printf("%s() %d\n", __func__, __LINE__);
                         return -1;
 		    }
 
@@ -500,6 +510,7 @@ iperf_run_server(struct iperf_test *test)
 				    cleanup_server(test);
 				    errno = saved_errno;
 				    i_errno = IESETCONGESTION;
+	    	    		    printf("%s() %d\n", __func__, __LINE__);
 				    return -1;
 				}
 			    } 
@@ -507,12 +518,13 @@ iperf_run_server(struct iperf_test *test)
 			{
 			    socklen_t len = TCP_CA_NAME_MAX;
 			    char ca[TCP_CA_NAME_MAX + 1];
-			    if (getsockopt(s, IPPROTO_TCP, TCP_CONGESTION, ca, &len) < 0) {
+			    if (lwip_getsockopt(s, IPPROTO_TCP, TCP_CONGESTION, ca, &len) < 0) {
 				saved_errno = errno;
 				close(s);
 				cleanup_server(test);
 				errno = saved_errno;
 				i_errno = IESETCONGESTION;
+	    			printf("%s() %d\n", __func__, __LINE__);
 				return -1;
 			    }
 			    test->congestion_used = strdup(ca);
@@ -537,6 +549,7 @@ iperf_run_server(struct iperf_test *test)
                             sp = iperf_new_stream(test, s, flag);
                             if (!sp) {
                                 cleanup_server(test);
+	    			printf("%s() %d\n", __func__, __LINE__);
                                 return -1;
                             }
 
@@ -580,6 +593,7 @@ iperf_run_server(struct iperf_test *test)
                             if ((s = netannounce(test->settings->domain, Ptcp, test->bind_address, test->server_port)) < 0) {
 				cleanup_server(test);
                                 i_errno = IELISTEN;
+	    			printf("%s() %d\n", __func__, __LINE__);
                                 return -1;
                             }
                             test->listener = s;
@@ -590,27 +604,33 @@ iperf_run_server(struct iperf_test *test)
                     test->prot_listener = -1;
 		    if (iperf_set_send_state(test, TEST_START) != 0) {
 			cleanup_server(test);
+	    		printf("%s() %d\n", __func__, __LINE__);
                         return -1;
 		    }
                     if (iperf_init_test(test) < 0) {
 			cleanup_server(test);
+	    		printf("%s() %d\n", __func__, __LINE__);
                         return -1;
 		    }
 		    if (create_server_timers(test) < 0) {
 			cleanup_server(test);
+	    		printf("%s() %d\n", __func__, __LINE__);
                         return -1;
 		    }
 		    if (create_server_omit_timer(test) < 0) {
 			cleanup_server(test);
+	    		printf("%s() %d\n", __func__, __LINE__);
                         return -1;
 		    }
 		    if (test->mode != RECEIVER)
 			if (iperf_create_send_timers(test) < 0) {
 			    cleanup_server(test);
+	    		    printf("%s() %d\n", __func__, __LINE__);
 			    return -1;
 			}
 		    if (iperf_set_send_state(test, TEST_RUNNING) != 0) {
 			cleanup_server(test);
+	    		printf("%s() %d\n", __func__, __LINE__);
                         return -1;
 		    }
                 }
@@ -620,22 +640,26 @@ iperf_run_server(struct iperf_test *test)
                 if (test->mode == BIDIRECTIONAL) {
                     if (iperf_recv(test, &read_set) < 0) {
                         cleanup_server(test);
+	    		printf("%s() %d\n", __func__, __LINE__);
                         return -1;
                     }
                     if (iperf_send(test, &write_set) < 0) {
                         cleanup_server(test);
+	    		printf("%s() %d\n", __func__, __LINE__);
                         return -1;
                     }
                 } else if (test->mode == SENDER) {
                     // Reverse mode. Server sends.
                     if (iperf_send(test, &write_set) < 0) {
 			cleanup_server(test);
+	    		printf("%s() %d\n", __func__, __LINE__);
                         return -1;
 		    }
                 } else {
                     // Regular mode. Server receives.
                     if (iperf_recv(test, &read_set) < 0) {
 			cleanup_server(test);
+	    		printf("%s() %d\n", __func__, __LINE__);
                         return -1;
 		    }
                 }

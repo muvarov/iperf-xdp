@@ -691,7 +691,7 @@ iperf_on_connect(struct iperf_test *test)
 	}
     } else {
         len = sizeof(sa);
-        getpeername(test->ctrl_sck, (struct sockaddr *) &sa, &len);
+        lwip_getpeername(test->ctrl_sck, (struct sockaddr *) &sa, &len);
         if (getsockdomain(test->ctrl_sck) == AF_INET) {
 	    sa_inP = (struct sockaddr_in *) &sa;
             inet_ntop(AF_INET, &sa_inP->sin_addr, ipr, sizeof(ipr));
@@ -2359,7 +2359,7 @@ iperf_free_test(struct iperf_test *test)
             xbe = TAILQ_FIRST(&test->xbind_addrs);
             TAILQ_REMOVE(&test->xbind_addrs, xbe, link);
             if (xbe->ai)
-                freeaddrinfo(xbe->ai);
+                lwip_freeaddrinfo(xbe->ai);
             free(xbe->name);
             free(xbe);
         }
@@ -2417,7 +2417,7 @@ iperf_free_test(struct iperf_test *test)
 
         TAILQ_FOREACH(xbe, &test->xbind_addrs, link) {
             if (xbe->ai) {
-                freeaddrinfo(xbe->ai);
+                lwip_freeaddrinfo(xbe->ai);
                 xbe->ai = NULL;
             }
         }
@@ -3637,12 +3637,12 @@ iperf_init_stream(struct iperf_stream *sp, struct iperf_test *test)
     int opt;
 
     len = sizeof(struct sockaddr_storage);
-    if (getsockname(sp->socket, (struct sockaddr *) &sp->local_addr, &len) < 0) {
+    if (lwip_getsockname(sp->socket, (struct sockaddr *) &sp->local_addr, &len) < 0) {
         i_errno = IEINITSTREAM;
         return -1;
     }
     len = sizeof(struct sockaddr_storage);
-    if (getpeername(sp->socket, (struct sockaddr *) &sp->remote_addr, &len) < 0) {
+    if (lwip_getpeername(sp->socket, (struct sockaddr *) &sp->remote_addr, &len) < 0) {
         i_errno = IEINITSTREAM;
         return -1;
     }
@@ -3651,7 +3651,7 @@ iperf_init_stream(struct iperf_stream *sp, struct iperf_test *test)
     if ((opt = test->settings->tos)) {
         if (getsockdomain(sp->socket) == AF_INET6) {
 #ifdef IPV6_TCLASS
-            if (setsockopt(sp->socket, IPPROTO_IPV6, IPV6_TCLASS, &opt, sizeof(opt)) < 0) {
+            if (lwip_setsockopt(sp->socket, IPPROTO_IPV6, IPV6_TCLASS, &opt, sizeof(opt)) < 0) {
                 i_errno = IESETCOS;
                 return -1;
             }
@@ -3660,7 +3660,7 @@ iperf_init_stream(struct iperf_stream *sp, struct iperf_test *test)
             return -1;
 #endif
         } else {
-            if (setsockopt(sp->socket, IPPROTO_IP, IP_TOS, &opt, sizeof(opt)) < 0) {
+            if (lwip_setsockopt(sp->socket, IPPROTO_IP, IP_TOS, &opt, sizeof(opt)) < 0) {
                 i_errno = IESETTOS;
                 return -1;
             }

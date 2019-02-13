@@ -33,6 +33,7 @@
 #include <stdarg.h>
 #include "iperf.h"
 #include "iperf_api.h"
+#include <execinfo.h>
 
 /* Do a printf to stderr. */
 void
@@ -83,11 +84,29 @@ iperf_errexit(struct iperf_test *test, const char *format, ...)
 int i_errno;
 
 char *
-iperf_strerror(int int_errno)
+__iperf_strerror(int int_errno)
 {
     static char errstr[256];
     int len, perr, herr;
     perr = herr = 0;
+    int j, nptrs;
+#define SIZE 100
+    void *buffer[100];
+    char **strings;
+
+           nptrs = backtrace(buffer, SIZE);
+           printf("backtrace() returned %d addresses\n", nptrs);
+
+           strings = backtrace_symbols(buffer, nptrs);
+           if (strings == NULL) {
+               perror("backtrace_symbols");
+               exit(EXIT_FAILURE);
+           }
+
+           for (j = 0; j < nptrs; j++)
+               printf("%s\n", strings[j]);
+
+
 
     len = sizeof(errstr);
     memset(errstr, 0, len);
@@ -386,5 +405,6 @@ iperf_strerror(int int_errno)
     if (errno && perr)
         strncat(errstr, strerror(errno), len - strlen(errstr) - 1);
 
+	fflush(stdout);
     return errstr;
 }

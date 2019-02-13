@@ -147,7 +147,7 @@ am_libiperf_la_OBJECTS = cjson.lo iperf_api.lo iperf_error.lo \
 	iperf_auth.lo iperf_client_api.lo iperf_locale.lo \
 	iperf_server_api.lo iperf_tcp.lo iperf_udp.lo iperf_sctp.lo \
 	iperf_util.lo iperf_time.lo dscp.lo net.lo tcp_info.lo \
-	timer.lo units.lo
+	timer.lo units.lo lwip_init.lo
 libiperf_la_OBJECTS = $(am_libiperf_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -167,7 +167,7 @@ am__iperf3_profile_SOURCES_DIST = main.c cjson.c cjson.h flowlabel.h \
 	iperf_udp.h iperf_sctp.c iperf_sctp.h iperf_util.c \
 	iperf_util.h iperf_time.c iperf_time.h dscp.c net.c net.h \
 	portable_endian.h queue.h tcp_info.c timer.c timer.h units.c \
-	units.h version.h
+	units.h version.h lwip_init.c
 am__objects_1 = iperf3_profile-cjson.$(OBJEXT) \
 	iperf3_profile-iperf_api.$(OBJEXT) \
 	iperf3_profile-iperf_error.$(OBJEXT) \
@@ -182,7 +182,8 @@ am__objects_1 = iperf3_profile-cjson.$(OBJEXT) \
 	iperf3_profile-iperf_time.$(OBJEXT) \
 	iperf3_profile-dscp.$(OBJEXT) iperf3_profile-net.$(OBJEXT) \
 	iperf3_profile-tcp_info.$(OBJEXT) \
-	iperf3_profile-timer.$(OBJEXT) iperf3_profile-units.$(OBJEXT)
+	iperf3_profile-timer.$(OBJEXT) iperf3_profile-units.$(OBJEXT) \
+	iperf3_profile-lwip_init.$(OBJEXT)
 @ENABLE_PROFILING_TRUE@am_iperf3_profile_OBJECTS =  \
 @ENABLE_PROFILING_TRUE@	iperf3_profile-main.$(OBJEXT) \
 @ENABLE_PROFILING_TRUE@	$(am__objects_1)
@@ -628,12 +629,13 @@ libiperf_la_SOURCES = \
                         timer.h \
                         units.c \
                         units.h \
-                        version.h
+                        version.h \
+			lwip_init.c
 
 
 # Specify the sources and various flags for the iperf binary
 iperf3_SOURCES = main.c
-iperf3_CFLAGS = -g
+iperf3_CFLAGS = -g -O0
 iperf3_LDADD = libiperf.la
 iperf3_LDFLAGS = -g
 
@@ -643,7 +645,7 @@ iperf3_LDFLAGS = -g
 @ENABLE_PROFILING_TRUE@iperf3_profile_SOURCES = main.c \
 @ENABLE_PROFILING_TRUE@                          $(libiperf_la_SOURCES)
 
-@ENABLE_PROFILING_TRUE@iperf3_profile_CFLAGS = -pg -g
+@ENABLE_PROFILING_TRUE@iperf3_profile_CFLAGS = -pg -g -O0
 @ENABLE_PROFILING_TRUE@iperf3_profile_LDADD = libiperf.la
 @ENABLE_PROFILING_TRUE@iperf3_profile_LDFLAGS = -pg -g
 
@@ -859,6 +861,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/iperf3_profile-iperf_time.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/iperf3_profile-iperf_udp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/iperf3_profile-iperf_util.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/iperf3_profile-lwip_init.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/iperf3_profile-main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/iperf3_profile-net.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/iperf3_profile-tcp_info.Po@am__quote@
@@ -875,6 +878,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/iperf_time.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/iperf_udp.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/iperf_util.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lwip_init.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/net.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/t_api-t_api.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/t_timer-t_timer.Po@am__quote@
@@ -1170,6 +1174,20 @@ iperf3_profile-units.obj: units.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='units.c' object='iperf3_profile-units.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -c -o iperf3_profile-units.obj `if test -f 'units.c'; then $(CYGPATH_W) 'units.c'; else $(CYGPATH_W) '$(srcdir)/units.c'; fi`
+
+iperf3_profile-lwip_init.o: lwip_init.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -MT iperf3_profile-lwip_init.o -MD -MP -MF $(DEPDIR)/iperf3_profile-lwip_init.Tpo -c -o iperf3_profile-lwip_init.o `test -f 'lwip_init.c' || echo '$(srcdir)/'`lwip_init.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/iperf3_profile-lwip_init.Tpo $(DEPDIR)/iperf3_profile-lwip_init.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='lwip_init.c' object='iperf3_profile-lwip_init.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -c -o iperf3_profile-lwip_init.o `test -f 'lwip_init.c' || echo '$(srcdir)/'`lwip_init.c
+
+iperf3_profile-lwip_init.obj: lwip_init.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -MT iperf3_profile-lwip_init.obj -MD -MP -MF $(DEPDIR)/iperf3_profile-lwip_init.Tpo -c -o iperf3_profile-lwip_init.obj `if test -f 'lwip_init.c'; then $(CYGPATH_W) 'lwip_init.c'; else $(CYGPATH_W) '$(srcdir)/lwip_init.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/iperf3_profile-lwip_init.Tpo $(DEPDIR)/iperf3_profile-lwip_init.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='lwip_init.c' object='iperf3_profile-lwip_init.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -c -o iperf3_profile-lwip_init.obj `if test -f 'lwip_init.c'; then $(CYGPATH_W) 'lwip_init.c'; else $(CYGPATH_W) '$(srcdir)/lwip_init.c'; fi`
 
 t_api-t_api.o: t_api.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(t_api_CFLAGS) $(CFLAGS) -MT t_api-t_api.o -MD -MP -MF $(DEPDIR)/t_api-t_api.Tpo -c -o t_api-t_api.o `test -f 't_api.c' || echo '$(srcdir)/'`t_api.c

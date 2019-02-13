@@ -88,7 +88,7 @@ timeout_connect(int s, const struct sockaddr *name, socklen_t namelen,
 		pfd.events = POLLOUT;
 		if ((ret = lwip_poll(&pfd, 1, timeout)) == 1) {
 			optlen = sizeof(optval);
-			if ((ret = getsockopt(s, SOL_SOCKET, SO_ERROR,
+			if ((ret = lwip_getsockopt(s, SOL_SOCKET, SO_ERROR,
 			    &optval, &optlen)) == 0) {
 				errno = optval;
 				ret = optval == 0 ? 0 : -1;
@@ -121,21 +121,21 @@ netdial(int domain, int proto, char *local, int local_port, char *server, int po
         memset(&hints, 0, sizeof(hints));
         hints.ai_family = domain;
         hints.ai_socktype = proto;
-        if (getaddrinfo(local, NULL, &hints, &local_res) != 0)
+        if (lwip_getaddrinfo(local, NULL, &hints, &local_res) != 0)
             return -1;
     }
 
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = domain;
     hints.ai_socktype = proto;
-    if (getaddrinfo(server, NULL, &hints, &server_res) != 0)
+    if (lwip_getaddrinfo(server, NULL, &hints, &server_res) != 0)
         return -1;
 
-    s = socket(server_res->ai_family, proto, 0);
+    s = lwip_socket(server_res->ai_family, proto, 0);
     if (s < 0) {
 	if (local)
-	    freeaddrinfo(local_res);
-	freeaddrinfo(server_res);
+	    lwip_freeaddrinfo(local_res);
+	lwip_freeaddrinfo(server_res);
         return -1;
     }
 
@@ -147,15 +147,15 @@ netdial(int domain, int proto, char *local, int local_port, char *server, int po
             lcladdr->sin_port = htons(local_port);
         }
 
-        if (bind(s, (struct sockaddr *) local_res->ai_addr, local_res->ai_addrlen) < 0) {
+        if (lwip_bind(s, (struct sockaddr *) local_res->ai_addr, local_res->ai_addrlen) < 0) {
 	    saved_errno = errno;
 	    close(s);
-	    freeaddrinfo(local_res);
-	    freeaddrinfo(server_res);
+	    lwip_freeaddrinfo(local_res);
+	    lwip_freeaddrinfo(server_res);
 	    errno = saved_errno;
             return -1;
 	}
-        freeaddrinfo(local_res);
+        lwip_freeaddrinfo(local_res);
     }
     /* No local name, but --cport given */
     else if (local_port) {
@@ -184,7 +184,7 @@ netdial(int domain, int proto, char *local, int local_port, char *server, int po
             return -1;
 	}
 
-        if (bind(s, (struct sockaddr *) &lcl, addrlen) < 0) {
+        if (lwip_bind(s, (struct sockaddr *) &lcl, addrlen) < 0) {
 	    saved_errno = errno;
 	    close(s);
 	    freeaddrinfo(server_res);
@@ -215,6 +215,7 @@ netannounce(int domain, int proto, char *local, int port)
     char portstr[6];
     int s, opt, saved_errno;
 
+    printf("%s() %d\n", __func__, __LINE__);
     snprintf(portstr, 6, "%d", port);
     memset(&hints, 0, sizeof(hints));
     /* 
@@ -237,22 +238,27 @@ netannounce(int domain, int proto, char *local, int port)
     }
     hints.ai_socktype = proto;
     hints.ai_flags = AI_PASSIVE;
-    if (getaddrinfo(local, portstr, &hints, &res) != 0)
+    if (lwip_getaddrinfo(local, portstr, &hints, &res) != 0) {
+    	printf("%s() %d\n", __func__, __LINE__);
         return -1; 
+    }
 
-    s = socket(res->ai_family, proto, 0);
+    printf("%s() %d\n", __func__, __LINE__);
+    s = lwip_socket(res->ai_family, proto, 0);
     if (s < 0) {
-	freeaddrinfo(res);
+	lwip_freeaddrinfo(res);
         return -1;
     }
 
+    printf("%s() %d\n", __func__, __LINE__);
     opt = 1;
-    if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, 
+    if (lwip_setsockopt(s, SOL_SOCKET, SO_REUSEADDR, 
 		   (char *) &opt, sizeof(opt)) < 0) {
 	saved_errno = errno;
 	close(s);
 	freeaddrinfo(res);
 	errno = saved_errno;
+    	printf("%s() %d\n", __func__, __LINE__);
 	return -1;
     }
     /*
@@ -269,32 +275,35 @@ netannounce(int domain, int proto, char *local, int port)
 	    opt = 0;
 	else
 	    opt = 1;
-	if (setsockopt(s, IPPROTO_IPV6, IPV6_V6ONLY, 
+	if (lwip_setsockopt(s, IPPROTO_IPV6, IPV6_V6ONLY, 
 		       (char *) &opt, sizeof(opt)) < 0) {
 	    saved_errno = errno;
 	    close(s);
-	    freeaddrinfo(res);
+	    lwip_freeaddrinfo(res);
 	    errno = saved_errno;
+    	    printf("%s() %d\n", __func__, __LINE__);
 	    return -1;
 	}
     }
 #endif /* IPV6_V6ONLY */
 
-    if (bind(s, (struct sockaddr *) res->ai_addr, res->ai_addrlen) < 0) {
+    if (lwip_bind(s, (struct sockaddr *) res->ai_addr, res->ai_addrlen) < 0) {
         saved_errno = errno;
         close(s);
-	freeaddrinfo(res);
+	lwip_freeaddrinfo(res);
         errno = saved_errno;
+    	printf("%s() %d\n", __func__, __LINE__);
         return -1;
     }
 
-    freeaddrinfo(res);
+    lwip_freeaddrinfo(res);
     
     if (proto == SOCK_STREAM) {
-        if (listen(s, INT_MAX) < 0) {
+        if (lwip_listen(s, INT_MAX) < 0) {
 	    saved_errno = errno;
 	    close(s);
 	    errno = saved_errno;
+    	    printf("%s() %d\n", __func__, __LINE__);
             return -1;
         }
     }
@@ -314,7 +323,7 @@ Nread(int fd, char *buf, size_t count, int prot)
     register size_t nleft = count;
 
     while (nleft > 0) {
-        r = read(fd, buf, nleft);
+        r = lwip_read(fd, buf, nleft);
         if (r < 0) {
             if (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK)
                 break;
@@ -341,7 +350,7 @@ Nwrite(int fd, const char *buf, size_t count, int prot)
     register size_t nleft = count;
 
     while (nleft > 0) {
-	r = write(fd, buf, nleft);
+	r = lwip_write(fd, buf, nleft);
 	if (r < 0) {
 	    switch (errno) {
 		case EINTR:
@@ -369,11 +378,7 @@ Nwrite(int fd, const char *buf, size_t count, int prot)
 int
 has_sendfile(void)
 {
-#if defined(HAVE_SENDFILE)
-    return 1;
-#else /* HAVE_SENDFILE */
     return 0;
-#endif /* HAVE_SENDFILE */
 
 }
 
@@ -386,6 +391,8 @@ int
 Nsendfile(int fromfd, int tofd, const char *buf, size_t count)
 {
     off_t offset;
+
+    printf("%s bug, no lwip!!!\n", __func__);
 #if defined(HAVE_SENDFILE)
 #if defined(__FreeBSD__) || (defined(__APPLE__) && defined(__MACH__) && defined(MAC_OS_X_VERSION_10_6))
     off_t sent;
@@ -450,7 +457,7 @@ setnonblocking(int fd, int nonblocking)
 {
     int flags, newflags;
 
-    flags = fcntl(fd, F_GETFL, 0);
+    flags = lwip_fcntl(fd, F_GETFL, 0);
     if (flags < 0) {
         perror("fcntl(F_GETFL)");
         return -1;
@@ -460,7 +467,7 @@ setnonblocking(int fd, int nonblocking)
     else
 	newflags = flags & ~((int) O_NONBLOCK);
     if (newflags != flags)
-	if (fcntl(fd, F_SETFL, newflags) < 0) {
+	if (lwip_fcntl(fd, F_SETFL, newflags) < 0) {
 	    perror("fcntl(F_SETFL)");
 	    return -1;
 	}
@@ -475,7 +482,7 @@ getsockdomain(int sock)
     struct sockaddr_storage sa;
     socklen_t len = sizeof(sa);
 
-    if (getsockname(sock, (struct sockaddr *)&sa, &len) < 0) {
+    if (lwip_getsockname(sock, (struct sockaddr *)&sa, &len) < 0) {
         return -1;
     }
     return ((struct sockaddr *) &sa)->sa_family;

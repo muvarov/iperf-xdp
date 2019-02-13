@@ -55,4 +55,8 @@
 #include <lwip/errno.h>
 #define sockaddr_storage sockaddr
 
+#include <stdio.h>
+extern char * __iperf_strerror(int int_errno);
+#define iperf_strerror(err)  __iperf_strerror(err)
+
 #endif

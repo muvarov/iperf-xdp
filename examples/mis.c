@@ -10,6 +10,8 @@
 
 #include <iperf_api.h>
 
+#include <ip_headers.h>
+
 int
 main( int argc, char** argv )
 {
