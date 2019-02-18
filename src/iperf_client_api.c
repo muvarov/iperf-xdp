@@ -64,28 +64,32 @@ iperf_create_streams(struct iperf_test *test, int sender)
         test->bind_port = orig_bind_port;
 	if (orig_bind_port)
 	    test->bind_port += i;
-        if ((s = test->protocol->connect(test)) < 0)
+        if ((s = test->protocol->connect(test)) < 0) {
+	     printf("%s()%d connect error\n", __func__, __LINE__);
             return -1;
+	}
 
 #if defined(HAVE_TCP_CONGESTION)
 	if (test->protocol->id == Ptcp) {
 	    if (test->congestion) {
-		if (setsockopt(s, IPPROTO_TCP, TCP_CONGESTION, test->congestion, strlen(test->congestion)) < 0) {
+		if (lwip_setsockopt(s, IPPROTO_TCP, TCP_CONGESTION, test->congestion, strlen(test->congestion)) < 0) {
 		    saved_errno = errno;
 		    close(s);
 		    errno = saved_errno;
 		    i_errno = IESETCONGESTION;
+	            printf("%s()%d error doing TCP_CONGESTION 1\n", __func__, __LINE__);
 		    return -1;
 		} 
 	    }
 	    {
 		socklen_t len = TCP_CA_NAME_MAX;
 		char ca[TCP_CA_NAME_MAX + 1];
-		if (getsockopt(s, IPPROTO_TCP, TCP_CONGESTION, ca, &len) < 0) {
+		if (lwip_getsockopt(s, IPPROTO_TCP, TCP_CONGESTION, ca, &len) < 0) {
 		    saved_errno = errno;
 		    close(s);
 		    errno = saved_errno;
 		    i_errno = IESETCONGESTION;
+	            printf("%s()%d error doing TCP_CONGESTION\n", __func__, __LINE__);
 		    return -1;
 		}
 		test->congestion_used = strdup(ca);
@@ -103,8 +107,10 @@ iperf_create_streams(struct iperf_test *test, int sender)
 	if (s > test->max_fd) test->max_fd = s;
 
         sp = iperf_new_stream(test, s, sender);
-        if (!sp)
+        if (!sp) {
+	    printf("%s()%d error doing iperf_new_stream\n", __func__, __LINE__);
             return -1;
+	}
 
         /* Perform the new stream callback */
         if (test->on_new_stream)
@@ -232,50 +238,70 @@ iperf_handle_message_client(struct iperf_test *test)
     int32_t err;
 
     /*!!! Why is this read() and not Nread()? */
-    if ((rval = read(test->ctrl_sck, (char*) &test->state, sizeof(signed char))) <= 0) {
+    if ((rval = lwip_read(test->ctrl_sck, (char*) &test->state, sizeof(signed char))) <= 0) {
         if (rval == 0) {
             i_errno = IECTRLCLOSE;
+	    printf("%s()%d error\n", __func__, __LINE__);
             return -1;
         } else {
             i_errno = IERECVMESSAGE;
+	    printf("%s()%d error\n", __func__, __LINE__);
             return -1;
         }
     }
 
     switch (test->state) {
         case PARAM_EXCHANGE:
-            if (iperf_exchange_parameters(test) < 0)
+            if (iperf_exchange_parameters(test) < 0) {
+		printf("%s()%d error\n", __func__, __LINE__);
                 return -1;
+	    }
             if (test->on_connect)
                 test->on_connect(test);
             break;
         case CREATE_STREAMS:
             if (test->mode == BIDIRECTIONAL)
             {
-                if (iperf_create_streams(test, 1) < 0)
+                if (iperf_create_streams(test, 1) < 0) {
+		    printf("%s()%d error\n", __func__, __LINE__);
                     return -1;
-                if (iperf_create_streams(test, 0) < 0)
+		}
+                if (iperf_create_streams(test, 0) < 0) {
+		    printf("%s()%d error\n", __func__, __LINE__);
                     return -1;
+		}
             }
-            else if (iperf_create_streams(test, test->mode) < 0)
+            else if (iperf_create_streams(test, test->mode) < 0) {
+		printf("%s()%d error\n", __func__, __LINE__);
                 return -1;
+	    }
             break;
         case TEST_START:
-            if (iperf_init_test(test) < 0)
+            if (iperf_init_test(test) < 0) {
+		printf("%s()%d error\n", __func__, __LINE__);
                 return -1;
-            if (create_client_timers(test) < 0)
+	    }
+            if (create_client_timers(test) < 0) {
+		printf("%s()%d error\n", __func__, __LINE__);
                 return -1;
-            if (create_client_omit_timer(test) < 0)
+	    }
+            if (create_client_omit_timer(test) < 0) {
+		printf("%s()%d error\n", __func__, __LINE__);
                 return -1;
+	    }
 	    if (test->mode)
-		if (iperf_create_send_timers(test) < 0)
+		if (iperf_create_send_timers(test) < 0) {
+		    printf("%s()%d error\n", __func__, __LINE__);
 		    return -1;
+		}
             break;
         case TEST_RUNNING:
             break;
         case EXCHANGE_RESULTS:
-            if (iperf_exchange_results(test) < 0)
+            if (iperf_exchange_results(test) < 0) {
+		printf("%s()%d error\n", __func__, __LINE__);
                 return -1;
+	    }
             break;
         case DISPLAY_RESULTS:
             if (test->on_test_finish)
@@ -299,21 +325,26 @@ iperf_handle_message_client(struct iperf_test *test)
             return -1;
         case ACCESS_DENIED:
             i_errno = IEACCESSDENIED;
+	    printf("%s()%d error\n", __func__, __LINE__);
             return -1;
         case SERVER_ERROR:
             if (Nread(test->ctrl_sck, (char*) &err, sizeof(err), Ptcp) < 0) {
                 i_errno = IECTRLREAD;
+	        printf("%s()%d error\n", __func__, __LINE__);
                 return -1;
             }
 	    i_errno = ntohl(err);
             if (Nread(test->ctrl_sck, (char*) &err, sizeof(err), Ptcp) < 0) {
                 i_errno = IECTRLREAD;
+	        printf("%s()%d error\n", __func__, __LINE__);
                 return -1;
             }
             errno = ntohl(err);
+	    printf("%s()%d error\n", __func__, __LINE__);
             return -1;
         default:
             i_errno = IEMESSAGE;
+	    printf("%s()%d error\n", __func__, __LINE__);
             return -1;
     }
 
@@ -336,6 +367,7 @@ iperf_connect(struct iperf_test *test)
 	// Create the control channel using an ephemeral port
 	test->ctrl_sck = netdial(test->settings->domain, Ptcp, test->bind_address, 0, test->server_hostname, test->server_port, test->settings->connect_timeout);
     if (test->ctrl_sck < 0) {
+	printf("%s()%d netdial fail\n", __func__, __LINE__);
         i_errno = IECONNECT;
         return -1;
     }
@@ -474,6 +506,8 @@ iperf_run_client(struct iperf_test * test)
     if (iperf_connect(test) < 0)
         return -1;
 
+    printf("%s()%d iperf_connect OK\n", __func__, __LINE__);
+
     /* Begin calculating CPU utilization */
     cpu_util(NULL);
 
@@ -483,19 +517,23 @@ iperf_run_client(struct iperf_test * test)
 	memcpy(&write_set, &test->write_set, sizeof(fd_set));
 	iperf_time_now(&now);
 	timeout = tmr_timeout(&now);
-	result = select(test->max_fd + 1, &read_set, &write_set, NULL, timeout);
+	result = lwip_select(test->max_fd + 1, &read_set, &write_set, NULL, timeout);
 	if (result < 0 && errno != EINTR) {
   	    i_errno = IESELECT;
+	    printf("%s()%d error\n", __func__, __LINE__);
 	    return -1;
 	}
 	if (result > 0) {
 	    if (FD_ISSET(test->ctrl_sck, &read_set)) {
  	        if (iperf_handle_message_client(test) < 0) {
+	    	    printf("%s()%d error\n", __func__, __LINE__);
 		    return -1;
 		}
 		FD_CLR(test->ctrl_sck, &read_set);
 	    }
 	}
+
+	//printf("%s() sel %d state %d mode %d\n", __func__, result, test->state, test->mode);
 
 	if (test->state == TEST_RUNNING) {
 
@@ -514,18 +552,26 @@ iperf_run_client(struct iperf_test * test)
 
 	    if (test->mode == BIDIRECTIONAL)
 	    {
-                if (iperf_send(test, &write_set) < 0)
+                if (iperf_send(test, &write_set) < 0) {
+	    	    printf("%s()%d error\n", __func__, __LINE__);
                     return -1;
-                if (iperf_recv(test, &read_set) < 0)
+		}
+                if (iperf_recv(test, &read_set) < 0) {
+	    	    printf("%s()%d error\n", __func__, __LINE__);
                     return -1;
+		}
 	    } else if (test->mode == SENDER) {
                 // Regular mode. Client sends.
-                if (iperf_send(test, &write_set) < 0)
+                if (iperf_send(test, &write_set) < 0) {
+	    	    printf("%s()%d error\n", __func__, __LINE__);
                     return -1;
+		}
 	    } else {
                 // Reverse mode. Client receives.
-                if (iperf_recv(test, &read_set) < 0)
+                if (iperf_recv(test, &read_set) < 0) {
+	    	    printf("%s()%d error\n", __func__, __LINE__);
                     return -1;
+		}
 	    }
 
 
@@ -550,8 +596,10 @@ iperf_run_client(struct iperf_test * test)
 		test->done = 1;
 		cpu_util(test->cpu_util);
 		test->stats_callback(test);
-		if (iperf_set_send_state(test, TEST_END) != 0)
+		if (iperf_set_send_state(test, TEST_END) != 0) {
+	    	    printf("%s()%d error\n", __func__, __LINE__);
 		    return -1;
+		}
 	    }
 	}
 	// If we're in reverse mode, continue draining the data
@@ -560,14 +608,18 @@ iperf_run_client(struct iperf_test * test)
 	// and gets blocked, so it can't receive state changes
 	// from the client side.
 	else if (test->mode == RECEIVER && test->state == TEST_END) {
-	    if (iperf_recv(test, &read_set) < 0)
+	    if (iperf_recv(test, &read_set) < 0) {
+	    	printf("%s()%d error\n", __func__, __LINE__);
 		return -1;
+	    }
 	}
     }
 
     if (test->json_output) {
-	if (iperf_json_finish(test) < 0)
+	if (iperf_json_finish(test) < 0) {
+	    printf("%s()%d error\n", __func__, __LINE__);
 	    return -1;
+	}
     } else {
 	iperf_printf(test, "\n");
 	iperf_printf(test, "%s", report_done);

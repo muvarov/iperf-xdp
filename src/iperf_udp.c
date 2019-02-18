@@ -267,13 +267,14 @@ iperf_udp_buffercheck(struct iperf_test *test, int s)
      */
     int opt;
     socklen_t optlen;
-    
+
+#if 0    
     if ((opt = test->settings->socket_bufsize)) {
-        if (setsockopt(s, SOL_SOCKET, SO_RCVBUF, &opt, sizeof(opt)) < 0) {
+        if (lwip_setsockopt(s, SOL_SOCKET, SO_RCVBUF, &opt, sizeof(opt)) < 0) {
             i_errno = IESETBUF;
             return -1;
         }
-        if (setsockopt(s, SOL_SOCKET, SO_SNDBUF, &opt, sizeof(opt)) < 0) {
+        if (lwip_setsockopt(s, SOL_SOCKET, SO_SNDBUF, &opt, sizeof(opt)) < 0) {
             i_errno = IESETBUF;
             return -1;
         }
@@ -281,10 +282,12 @@ iperf_udp_buffercheck(struct iperf_test *test, int s)
 
     /* Read back and verify the sender socket buffer size */
     optlen = sizeof(sndbuf_actual);
-    if (getsockopt(s, SOL_SOCKET, SO_SNDBUF, &sndbuf_actual, &optlen) < 0) {
+    if (lwip_getsockopt(s, SOL_SOCKET, SO_SNDBUF, &sndbuf_actual, &optlen) < 0) {
 	i_errno = IESETBUF;
 	return -1;
     }
+#endif
+
     if (test->debug) {
 	printf("SNDBUF is %u, expecting %u\n", sndbuf_actual, test->settings->socket_bufsize);
     }
@@ -302,8 +305,9 @@ iperf_udp_buffercheck(struct iperf_test *test, int s)
     }
 
     /* Read back and verify the receiver socket buffer size */
+#if 0
     optlen = sizeof(rcvbuf_actual);
-    if (getsockopt(s, SOL_SOCKET, SO_RCVBUF, &rcvbuf_actual, &optlen) < 0) {
+    if (lwip_getsockopt(s, SOL_SOCKET, SO_RCVBUF, &rcvbuf_actual, &optlen) < 0) {
 	i_errno = IESETBUF;
 	return -1;
     }
@@ -322,6 +326,7 @@ iperf_udp_buffercheck(struct iperf_test *test, int s)
 	warning(str);
 	rc = 1;
     }
+#endif
 
     if (test->json_output) {
 	cJSON_AddNumberToObject(test->json_start, "sock_bufsize", test->settings->socket_bufsize);
@@ -358,12 +363,12 @@ iperf_udp_accept(struct iperf_test *test)
      * of the socket to the client.
      */
     len = sizeof(sa_peer);
-    if ((sz = recvfrom(test->prot_listener, &buf, sizeof(buf), 0, (struct sockaddr *) &sa_peer, &len)) < 0) {
+    if ((sz = lwip_recvfrom(test->prot_listener, &buf, sizeof(buf), 0, (struct sockaddr *) &sa_peer, &len)) < 0) {
         i_errno = IESTREAMACCEPT;
         return -1;
     }
 
-    if (connect(s, (struct sockaddr *) &sa_peer, len) < 0) {
+    if (lwip_connect(s, (struct sockaddr *) &sa_peer, len) < 0) {
         i_errno = IESTREAMACCEPT;
         return -1;
     }
@@ -398,7 +403,7 @@ iperf_udp_accept(struct iperf_test *test)
 	    if (test->debug) {
 		printf("Setting fair-queue socket pacing to %u\n", fqrate);
 	    }
-	    if (setsockopt(s, SOL_SOCKET, SO_MAX_PACING_RATE, &fqrate, sizeof(fqrate)) < 0) {
+	    if (lwip_setsockopt(s, SOL_SOCKET, SO_MAX_PACING_RATE, &fqrate, sizeof(fqrate)) < 0) {
 		warning("Unable to set socket pacing");
 	    }
 	}
@@ -427,7 +432,7 @@ iperf_udp_accept(struct iperf_test *test)
 
     /* Let the client know we're ready "accept" another UDP "stream" */
     buf = 987654321;		/* any content will work here */
-    if (write(s, &buf, sizeof(buf)) < 0) {
+    if (lwip_write(s, &buf, sizeof(buf)) < 0) {
         i_errno = IESTREAMWRITE;
         return -1;
     }
@@ -510,7 +515,7 @@ iperf_udp_connect(struct iperf_test *test)
 	    if (test->debug) {
 		printf("Setting fair-queue socket pacing to %u\n", fqrate);
 	    }
-	    if (setsockopt(s, SOL_SOCKET, SO_MAX_PACING_RATE, &fqrate, sizeof(fqrate)) < 0) {
+	    if (lwip_setsockopt(s, SOL_SOCKET, SO_MAX_PACING_RATE, &fqrate, sizeof(fqrate)) < 0) {
 		warning("Unable to set socket pacing");
 	    }
 	}
@@ -529,7 +534,7 @@ iperf_udp_connect(struct iperf_test *test)
     /* 30 sec timeout for a case when there is a network problem. */
     tv.tv_sec = 30;
     tv.tv_usec = 0;
-    setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, (struct timeval *)&tv, sizeof(struct timeval));
+    lwip_setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, (struct timeval *)&tv, sizeof(struct timeval));
 #endif
 
     /*
@@ -537,7 +542,7 @@ iperf_udp_connect(struct iperf_test *test)
      * The server learns our address by obtaining its peer's address.
      */
     buf = 123456789;		/* this can be pretty much anything */
-    if (write(s, &buf, sizeof(buf)) < 0) {
+    if (lwip_write(s, &buf, sizeof(buf)) < 0) {
         // XXX: Should this be changed to IESTREAMCONNECT? 
         i_errno = IESTREAMWRITE;
         return -1;
@@ -546,7 +551,7 @@ iperf_udp_connect(struct iperf_test *test)
     /*
      * Wait until the server replies back to us.
      */
-    if ((sz = recv(s, &buf, sizeof(buf), 0)) < 0) {
+    if ((sz = lwip_recv(s, &buf, sizeof(buf), 0)) < 0) {
         i_errno = IESTREAMREAD;
         return -1;
     }

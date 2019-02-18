@@ -694,11 +694,13 @@ iperf_on_connect(struct iperf_test *test)
         lwip_getpeername(test->ctrl_sck, (struct sockaddr *) &sa, &len);
         if (getsockdomain(test->ctrl_sck) == AF_INET) {
 	    sa_inP = (struct sockaddr_in *) &sa;
-            inet_ntop(AF_INET, &sa_inP->sin_addr, ipr, sizeof(ipr));
+	    printf("%s()%d sock domain is ipv4\n", __func__, __LINE__);
+            lwip_inet_ntop(AF_INET, &sa_inP->sin_addr, ipr, sizeof(ipr));
 	    port = ntohs(sa_inP->sin_port);
         } else {
+	    printf("%s()%d sock domain is ipv6\n", __func__, __LINE__);
 	    sa_in6P = (struct sockaddr_in6 *) &sa;
-            inet_ntop(AF_INET6, &sa_in6P->sin6_addr, ipr, sizeof(ipr));
+            lwip_inet_ntop(AF_INET6, &sa_in6P->sin6_addr, ipr, sizeof(ipr));
 	    port = ntohs(sa_in6P->sin6_port);
         }
 	mapped_v4_to_regular_v4(ipr);
@@ -1387,6 +1389,8 @@ iperf_send(struct iperf_test *test, fd_set *write_setP)
 		    if (r == NET_SOFTERROR)
 			break;
 		    i_errno = IESTREAMWRITE;
+
+    		     printf("%s() error\n", __func__);
 		    return r;
 		}
 		streams_active = 1;

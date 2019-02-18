@@ -88,13 +88,14 @@ iperf_tcp_send(struct iperf_stream *sp)
 	r = Nwrite(sp->socket, sp->buffer, sp->settings->blksize, Ptcp);
 
     if (r < 0)
-        return r;
+        goto err;
 
     sp->result->bytes_sent += r;
     sp->result->bytes_sent_this_interval += r;
 
     if (sp->test->debug)
 	printf("sent %d bytes of %d, total %" PRIu64 "\n", r, sp->settings->blksize, sp->result->bytes_sent);
+err:
 
     return r;
 }
@@ -488,6 +489,10 @@ iperf_tcp_connect(struct iperf_test *test)
             return -1;
         }
     }
+
+
+#if 0
+
     if ((opt = test->settings->socket_bufsize)) {
         if (lwip_setsockopt(s, SOL_SOCKET, SO_RCVBUF, &opt, sizeof(opt)) < 0) {
 	    saved_errno = errno;
@@ -509,6 +514,8 @@ iperf_tcp_connect(struct iperf_test *test)
         }
     }
 
+
+
     /* Read back and verify the sender socket buffer size */
     optlen = sizeof(sndbuf_actual);
     if (lwip_getsockopt(s, SOL_SOCKET, SO_SNDBUF, &sndbuf_actual, &optlen) < 0) {
@@ -520,6 +527,8 @@ iperf_tcp_connect(struct iperf_test *test)
 	printf("%s() %d\n", __func__, __LINE__);	
 	return -1;
     }
+#endif
+
     if (test->debug) {
 	printf("SNDBUF is %u, expecting %u\n", sndbuf_actual, test->settings->socket_bufsize);
     }
@@ -529,6 +538,7 @@ iperf_tcp_connect(struct iperf_test *test)
 	return -1;
     }
 
+#if 0
     /* Read back and verify the receiver socket buffer size */
     optlen = sizeof(rcvbuf_actual);
     if (lwip_getsockopt(s, SOL_SOCKET, SO_RCVBUF, &rcvbuf_actual, &optlen) < 0) {
@@ -548,6 +558,7 @@ iperf_tcp_connect(struct iperf_test *test)
 	printf("%s() %d\n", __func__, __LINE__);	
 	return -1;
     }
+#endif
 
     if (test->json_output) {
 	cJSON_AddNumberToObject(test->json_start, "sock_bufsize", test->settings->socket_bufsize);
